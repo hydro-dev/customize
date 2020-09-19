@@ -1,3 +1,7 @@
 tsconfig.json
 tsconfig.tsbuildinfo
 node_modules
+*.js
+*.d.ts
+*.js.map
+dist/
