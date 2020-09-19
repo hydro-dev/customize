@@ -1,0 +1,11 @@
+{
+    "name": "@hydrooj/customize",
+    "version": "1.0.0",
+    "description": "customize",
+    "main": "package.json",
+    "repository": "https://github.com/hydro-dev/customize.git",
+    "author": "undefined",
+    "license": "AGPL-3.0-only",
+    "dependencies": {
+    }
+}
