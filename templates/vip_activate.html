@@ -1,0 +1,26 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-8 columns">
+              <label>
+                {{ _('Activation code') }}
+                <input name="code" placeholder="{{ _('Activation code') }}" class="textbox" autocomplete="off">
+              </label>
+            </div>
+            <div class="medium-2 columns">
+              <button type="submit" class="rounded primary button">
+                {{ _('Activate') }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

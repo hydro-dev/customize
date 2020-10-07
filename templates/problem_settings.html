@@ -1,0 +1,126 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Dataset') }}</h1>
+      </div>
+      <div class="section__body">
+        <iframe src="{{ url('problem_upload', pid=pdoc.pid|default(pdoc.docId)) }}" frameborder="0" style="width: 100%; height: 100px;"></iframe>
+        <p class="help-text">{{ _('Hint') }}: <a href="{{ url('wiki_help', anchor='upload') }}">{{ _('Dataset Format') }}</a>, {{ _('An example of dataset') }}: <a href="https://github.com/vijos/jd4/blob/master/jd4/testdata/aplusb-legacy.zip?raw=true">{{ _('Download') }}</a></p>
+        {% if pdoc and (pdoc.owner == handler.user._id or handler.user.hasPerm(perm.PERM_READ_PROBLEM_DATA)) %}
+        <p><a href="{{ url('problem_data', pid=pdoc.pid|default(pdoc.docId)) }}" class="expanded button">{{ _('Download Dataset') }}</a></p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Testdata Config') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          {{ form.form_textarea({
+               columns:null,
+               label:'Config',
+               name:'yaml',
+               value:pdoc['config']|default(''),
+               yaml:true
+             }) }}
+          <div class="row"><div class="columns">
+            <input type="hidden" name="operation" value="config">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <button type="submit" class="rounded primary button">
+              {{ _('Update') }}
+            </button>
+          </div></div>
+        </form>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Settings') }}</h1>
+      </div>
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            {{ form.form_checkbox({
+                 columns:4,
+                 label:'Hidden', 
+                 help_text:'Note: Problem title may not be hidden.', 
+                 name:'hidden', 
+                 value:pdoc['hidden'],
+                 row:false
+              }) }}
+            {{ form.form_select({
+                 columns:4,
+                 label:'vip level',
+                 name:'vip level',
+                 options:[[0,0],[1,1],[2,2]],
+                 value:pdoc.vipLevel|default(0),
+                 row:false
+               }) }}
+          </div>
+          {{ form.form_text({
+               columns:12, 
+               label:'Category', 
+               help_text:'Format: category 1, category 2, ..., category n', 
+               name:'category', 
+               value:pdoc['category']|join(', ')
+             }) }}
+          {{ form.form_text({
+               columns:12, 
+               label:'Tags', 
+               help_text:'Splitted by \', \'.', 
+               name:'tag', 
+               value:pdoc['tag']|join(', ')
+             }) }}
+          <div class="row">
+            {{ form.form_select({
+                 columns:4,
+                 label:'Difficulty',
+                 name:'difficultySetting',
+                 options:model.problem.SETTING_DIFFICULTY_RANGE,
+                 value:pdoc.difficultySetting|default(0),
+                 row:false
+               }) }}
+            {{ form.form_text({
+                 columns:4,
+                 label:'Evaluated difficulty',
+                 help_text:"Effects only when Difficulty is not 'Use algorithm calculated'.",
+                 name:'difficultyAdmin',
+                 placeholder:'9',
+                 value:pdoc.difficultyAdmin or '',
+                 row:false
+               }) }}
+            <div class="medium-4 columns">
+              <p class="help-text">{{ _('Difficulty displayed') }}: {{ pdoc['difficulty'] or _('(None)') }}</p>
+              <p class="help-text">{{ _('Difficulty by algorithm') }}: {{ pdoc['difficultyAlgo'] or _('(None)') }}</p>
+              <p class="help-text">{{ _('Difficulty by admin') }}: {{ pdoc['difficultyAdmin'] or _('(None)') }}</p>
+            </div>
+          </div>
+          <div class="row"><div class="columns">
+            <input type="hidden" name="operation" value="setting">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+            <button type="submit" class="rounded primary button">
+              {{ _('Update') }}
+            </button>
+          </div></div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% set owner_udoc = udoc %}
+    {% include "partials/problem_sidebar.html" %}
+    <div class="section side nojs--hide">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('Categories') }} ({{ _('click to add') }})</h1>
+      </div>
+      <div class="section__body">
+        {% include "partials/category.html" %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

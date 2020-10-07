@@ -1,0 +1,86 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<style>
+.card-pic {
+    position: relative;
+    width: 100%;
+    height: 116px;
+}
+.card-pic a img {
+    width: 100%;
+    height: 100%;
+    border-radius: 2px;
+}
+img {
+    vertical-align: middle;
+    border-style: none;
+}
+.ex-title {
+    display: block;
+    font-size: 14px;
+    line-height: 20px;
+    margin: 10px 0 8px;
+    height: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    font-weight: 500;
+    padding-right: 12px;
+}
+.ext-box {
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -ms-flex-pack: justify;
+    padding-left: 15px;
+    padding-right: 15px;
+    justify-content: space-between;
+}
+</style>
+<div class="row">
+  <div class="large-9 columns">
+    <div class="section">
+      <div class="section__header">
+        <h1 class="section__title">{{ _('所有课程') }}</h1>
+      </div>
+    {% if not tdocs.length %}
+      {{ nothing.render('暂无课程。') }}
+    {% else %}
+      <div class="media ext-box">
+        {% for tdoc in tdocs %}
+          <a href="{{ url('course_detail', tid=tdoc.docId) }}" data-emoji-enabled>
+            <div class="media__body middle card-pic">
+              <img src="{{ tdoc.content[0].image }}" width="206" height="112"></img>
+              <p class="ex-title">{{ tdoc.title }}</p>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+      {{ paginator.render(page, tpcount, add_qs=qs) }}
+    {% endif %}
+    </div>
+  </div>
+  {% if handler.user.hasPerm(perm.PERM_CREATE_TRAINING) %}
+  <div class="large-3 columns">
+    <div class="section side">
+      <div class="section__header">
+        <h1 class="section__title">创建课程</h1>
+      </div>
+      <ol class="menu">
+        <li class="menu__item">
+          <a href="{{ url('course_create') }}" class="menu__link"><span class="icon icon-add"></span>创建课程</a>
+        </li>
+      </ol>
+      <div class="section__body">
+        <div class="typo supplementary">
+          <p>你有权限创建课程。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

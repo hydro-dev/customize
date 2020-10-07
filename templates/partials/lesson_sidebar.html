@@ -1,0 +1,53 @@
+{% import "components/user.html" as user with context %}
+<div class="section side section--problem-sidebar">
+  <div class="section__header">
+    <h1 class="section__title">{{ pdoc['title'] }}</h1>
+  </div>
+  <div>
+    <ol class="menu">
+    {% if pdoc.owner == handler.user._id or handler.user.hasPerm(perm.PERM_EDIT_PROBLEM) %}
+      <li class="menu__seperator"></li>
+      <li class="menu__item"><a class="menu__link{% if page_name == 'problem_edit' %} active{% endif %}" href="{{ url('problem_edit', pid=pdoc.pid|default(pdoc.docId)) }}">
+        <span class="icon icon-edit"></span> {{ _('Edit') }}
+      </a></li>
+    {% endif %}
+    </ol>
+  </div>
+</div>
+<div class="section side">
+  <div>
+    <ol class="menu">
+    {% if not attended %}
+      <li class="menu__item">
+    {% if handler.user.hasPerm(perm.PERM_ATTEND_TRAINING) and handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+        <form action="{{ url('training_detail', tid=tdoc.docId) }}" method="POST">
+          <input type="hidden" name="operation" value="attend">
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          <button class="menu__link" type="submit">
+            <span class="icon icon-add"></span> 参加课程
+          </button>
+        </form>
+    {% elif not handler.user.hasPriv(PRIV.PRIV_USER_PROFILE) %}
+        <a class="menu__link" href="javascript:showSignInDialog()">
+          <span class="icon icon-add"></span> 登录以参加该课程
+        </a>
+    {% else %}
+        <a class="menu__link disabled" href="javascript:;">
+          <span class="icon icon-add"></span> 无参加课程权限
+        </a>
+    {% endif %}
+      </li>
+    {% endif %}
+    {% if tdoc.owner == handler.user._id or handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+      <li class="menu__item"><a class="menu__link" href="{{ url('training_edit', tid=tdoc.docId) }}">
+        <span class="icon icon-edit"></span> 编辑课程
+      </a></li>
+    {% endif %}
+    </ol>
+  </div>
+  <div class="section__body typo">
+    <dl class="large horizontal">
+      <dt>课程</dt><dd>{{ tdoc['pids']|length }}</dd>
+    </dl>
+  </div>
+</div>
