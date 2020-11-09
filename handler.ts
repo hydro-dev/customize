@@ -9,6 +9,7 @@ import * as user from 'hydrooj/dist/model/user';
 import * as record from 'hydrooj/dist/model/record';
 import * as file from 'hydrooj/dist/model/file';
 import * as contest from 'hydrooj/dist/model/contest';
+import * as domain from 'hydrooj/dist/model/domain';
 import * as problem from 'hydrooj/dist/model/problem';
 import {
     Types, param, Handler, Route,
@@ -17,6 +18,8 @@ import { ContestNotFoundError } from 'hydrooj/dist/error';
 
 const extMap = {
     cpp: 'cc',
+    cc: 'cc',
+    pas: 'pas',
 };
 const logger = new Logger('contest-submit');
 
@@ -42,15 +45,18 @@ class ContestSubmitManyHandler extends Handler {
             const [uname, arg0, arg1] = entry.entryName.split('/');
             let pid;
             let ext;
+            let extra;
             if (arg1) {
                 ext = arg1.split('.')[1];
                 pid = arg0;
             } else {
-                [pid, ext] = arg0.split('.');
+                [pid, ext, extra] = arg0.split('.');
             }
-            if (!pidMap[pid]) continue;
-            const lang = extMap[ext] || ext;
+            if (extra || !pidMap[pid] || !extMap[ext]) continue;
+            const lang = extMap[ext];
             const code = entry.getData().toString();
+            // Ignore big files.
+            if (code.length > 10 * 1024 * 1024) continue;
             let uid;
             const udoc = await user.getByUname('system', uname);
             if (!udoc) uid = await user.create(`${uname}@hydro.local`, uname, Math.random().toString());
@@ -61,7 +67,11 @@ class ContestSubmitManyHandler extends Handler {
                 type: tdoc.docType as any,
                 tid,
             });
-            await contest.updateStatus(domainId, tdoc.docId, uid, rid, pidMap[pid]);
+            await Promise.all([
+                problem.inc(domainId, pidMap[pid], 'nSubmit', 1),
+                domain.incUserInDomain(domainId, uid, 'nSubmit'),
+                contest.updateStatus(domainId, tdoc.docId, uid, rid, pidMap[pid]),
+            ]);
         }
         this.response.redirect = this.url('record_main');
     }
