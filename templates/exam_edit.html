@@ -1,0 +1,53 @@
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            <div class="medium-5 columns">
+              <label>
+                {{ _('Title') }}
+                <input name="title" placeholder="{{ _('title') }}" value="{{ tdoc.title|default('') }}" class="textbox" autofocus>
+              </label>
+            </div>
+          </div>
+          <div class="row"><div class="columns">
+            <label>
+              数据
+              <textarea name="content" class="textbox" display="none">{{ tdoc['content']|default('') }}</textarea>
+              <div name="Main"></div>
+            </label>
+          </div></div>
+            {{ form.form_select({
+                 label:'vip level',
+                 name:'vip level',
+                 options:[[0,0],[1,1],[2,2]],
+                 value:tdoc.vipLevel|default(0)
+               }) }}
+          <div class="row"><div class="columns">
+            <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          {% if page_name == 'course_edit' %}
+            <button type="submit" class="rounded primary button">
+              {{ _('Update') }}
+            </button>
+          {% else %}
+            <button type="submit" class="rounded primary button">
+              {{ _('Create') }}
+            </button>
+          {% endif %}
+            <button type="button" class="rounded button" onclick="window.history.go(-1)">
+              {{ _('Cancel') }}
+            </button>
+          </div></div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    {% include 'components/md_hint.html' %}
+  </div>
+</div>
+<script src="/exam_edit.js"></script>
+{% endblock %}

@@ -1,20 +1,22 @@
 import {
-    BadRequestError, InvalidTokenError, PermissionError,
+    BadRequestError, InvalidTokenError, PermissionError, ProblemNotFoundError,
 } from 'hydrooj/dist/error';
 import {
     Handler, Route, param, Types,
 } from 'hydrooj/dist/service/server';
+import * as db from 'hydrooj/dist/service/db';
 import * as token from 'hydrooj/dist/model/token';
 import * as system from 'hydrooj/dist/model/system';
 import * as problem from 'hydrooj/dist/model/problem';
 import * as user from 'hydrooj/dist/model/user';
 import { PERM, PRIV, CONSTANT } from 'hydrooj/dist/model/builtin';
-import { isTitle, isPid, isContent } from 'hydrooj/dist/lib/validator';
+import { isTitle, isContent } from 'hydrooj/dist/lib/validator';
 import paginate from 'hydrooj/dist/lib/paginate';
 import moment from 'moment';
 import AlipaySdk from 'alipay-sdk';
 import AlipayFormData from 'alipay-sdk/lib/form';
 import './model';
+import { ObjectID } from 'mongodb';
 
 const TOKEN_TYPE_VIP = 15122;
 const TOKEN_TYPE_TRADE = 15123;
@@ -26,7 +28,7 @@ const sdk = new AlipaySdk({
     gateway: 'https://openapi.alipaydev.com/gateway.do',
 });
 
-const parseNodes = (content: string) => content.replace(/\r/gmi, '').split('\n\n').map((node) => {
+const parseNodes = (content: string = '') => content.replace(/\r/gmi, '').split('\n\n').map((node) => {
     const lines = node.split('\n');
     const [title, image] = lines[0].split(' ');
     lines.shift();
@@ -181,29 +183,69 @@ class CourseDetailHandler extends Handler {
     }
 }
 
-class LessonCreateHandler extends Handler {
+declare module 'hydrooj/dist/interface' {
+    interface Collections {
+        exam: {
+            _id: ObjectID,
+            title: string,
+            content: string
+        }
+    }
+}
+
+const colle = db.collection('exam');
+
+class ExamDetailHandler extends Handler {
+    @param('tid', Types.ObjectID)
+    async get(domainId: string, _id: ObjectID) {
+        const pdoc = await colle.findOne({ _id });
+        if (!pdoc) throw new ProblemNotFoundError(domainId, _id);
+        this.response.template = 'exam_detail';
+        this.response.body = { pdoc };
+    }
+}
+
+class ExamCreateHandler extends Handler {
     async get() {
-        this.response.template = 'lesson_edit.html';
+        this.response.template = 'exam_edit.html';
         this.response.body = {
             path: [
                 ['Hydro', 'homepage'],
-                ['创建课程', null],
+                ['创建试卷', null],
             ],
             page_name: 'lesson_create',
         };
     }
 
     @param('title', Types.String, isTitle)
-    @param('pid', Types.String, isPid, true)
     @param('content', Types.String, isContent)
-    async post(domainId: string, title: string, pid: string, content: string) {
-        const docId = await problem.add(
-            domainId, pid, title, content,
-            this.user._id, [], [], null, false,
-        );
-        await problem.edit(domainId, docId, { isCourse: true });
-        this.response.body = { pid: docId };
-        this.response.redirect = this.url('lesson_detail', { pid: docId });
+    async post(domainId: string, title: string, content: string) {
+        const res = await colle.insertOne({ _id: new ObjectID(), title, content });
+        this.response.body = { pid: res.insertedId };
+        this.response.redirect = this.url('exam_detail', { pid: res.insertedId });
+    }
+}
+
+class ExamEditHandler extends Handler {
+    @param('tid', Types.ObjectID)
+    async get(domainId: string, _id: ObjectID) {
+        const path = [
+            ['Hydro', 'homepage'],
+            ['编辑试卷', null],
+        ];
+        const pdoc = await colle.findOne({ _id });
+        if (!pdoc) throw new ProblemNotFoundError(domainId, _id);
+        this.response.template = 'exam_edit.html';
+        this.response.body = { tdoc: pdoc, path };
+    }
+
+    @param('tid', Types.ObjectID)
+    @param('title', Types.String, isTitle)
+    @param('content', Types.String, isContent)
+    async post(domainId: string, _id: ObjectID, title: string, content: string) {
+        await colle.updateOne({ _id }, { title, content });
+        this.response.body = { tid: _id };
+        this.response.redirect = this.url('exam_detail', { tid: _id });
     }
 }
 
@@ -216,8 +258,11 @@ export async function apply() {
     Route('course_create', '/course/create', CourseCreateHandler, PERM.PERM_CREATE_TRAINING);
     Route('course_detail', '/course/:tid', CourseDetailHandler);
     Route('course_edit', '/course/:tid/edit', CourseEditHandler, PERM.PERM_EDIT_TRAINING);
-    Route('lesson_create', '/lesson/create', LessonCreateHandler, PERM.PERM_CREATE_PROBLEM);
+    Route('exam_detail', '/exam/:tid', ExamDetailHandler, PRIV.PRIV_USER_PROFILE);
+    Route('exam_edit', '/exam/:tid/edit', ExamEditHandler, PERM.PERM_EDIT_PROBLEM);
+    Route('exam_create', '/exam/create', ExamCreateHandler, PERM.PERM_CREATE_PROBLEM);
     global.Hydro.ui.Nav('@@1@@course_main', {}, 'course_main');
+    global.Hydro.ui.Nav('@@2@@exam_main', {}, 'exam_main');
 }
 
 global.Hydro.handler.vip = apply;

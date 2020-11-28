@@ -1,0 +1,65 @@
+{% import "components/record.html" as record with context %}
+{% import "components/problem.html" as problem with context %}
+{% extends "layout/basic.html" %}
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+    {% for node in nodes %}
+      <div class="training__section expanded">
+        <div class="section__header clearfix">
+          <div class="float-left">
+            <h1 class="section__title">{{ _('Section') }} {{ node['title'] }}</h1>
+          </div>
+          <div class="float-right">
+            <h1 class="section__title training-section-status--text open">
+              <span class="icon training-section-status--icon open"></span>
+            </h1>
+          </div>
+        </div>
+        <div class="training__section__detail">
+          <div class="section__body no-padding training__problems">
+            <table class="data-table">
+              <colgroup>
+                <col class="col--name">
+              </colgroup>
+              <thead>
+                <tr><th class="col--name">试卷</th></tr>
+              </thead>
+              <tbody>
+              {% for pid in node['url'] %}
+                <tr>
+                  <td class="col--name col--problem-name">
+                    <video width="320" height="240" controls {% if pid[2] %}poster="{{pid[2]}}"{% endif %}>
+                      <source src="{{ pid[1] }}" type="video/mp4">
+                      Your browser does not support the video tag.
+                    </video>
+                    <p>{{ pid[0] }}</p>
+                  </td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <div class="section__body">&nbsp;<!-- space placeholder --></div>
+    </div>
+  </div>
+  <div class="medium-3 columns">
+    <div class="section side">
+      <div>
+        <ol class="menu">
+        {% if handler.user.hasPerm(perm.PERM_EDIT_TRAINING) %}
+          <li class="menu__item"><a class="menu__link" href="{{ url('exam_edit', tid=tdoc.docId) }}">
+            <span class="icon icon-edit"></span>  {{ _('Edit') }}
+          </a></li>
+          <li class="menu__seperator"></li>
+        {% endif %}
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
