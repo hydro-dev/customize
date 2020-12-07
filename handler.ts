@@ -25,8 +25,8 @@ const logger = new Logger('contest-submit');
 
 class ContestSubmitManyHandler extends Handler {
     @param('tid', Types.ObjectID)
-    @param('ufid', Types.ObjectID, true)
-    async get(domainId: string, tid: ObjectID, ufid?: ObjectID) {
+    @param('ufid', Types.ObjectID)
+    async get(domainId: string, tid: ObjectID, ufid: ObjectID) {
         const tdoc = await contest.get(domainId, tid);
         if (!tdoc) throw new ContestNotFoundError(domainId, tid);
         const pidMap = {};
@@ -39,41 +39,34 @@ class ContestSubmitManyHandler extends Handler {
         const zip = new AdmZip(await streamToBuffer(await file.get(ufid)));
         const files = filter(zip.getEntries(), (entry) => !entry.isDirectory);
         logger.info('Total %d', files.length);
-        for (const i in files) {
-            const entry = files[i];
-            if (!(+i % 100)) logger.info('Current %d, Total %d', i, files.length);
-            const [uname, arg0, arg1] = entry.entryName.split('/');
-            let pid;
-            let ext;
-            let extra;
-            if (arg1) {
-                ext = arg1.split('.')[1];
-                pid = arg0;
-            } else {
-                [pid, ext, extra] = arg0.split('.');
+        (async () => {
+            for (const i in files) {
+                const entry = files[i];
+                if (!(+i % 100)) logger.info('Current %d, Total %d', i, files.length);
+                const [uname, arg0, arg1] = entry.entryName.split('/');
+                const [pid, ext, extra] = arg1 ? [arg1.split('.')[1], arg0] : arg0.split('.');
+                if (extra || !pidMap[pid] || !extMap[ext]) continue;
+                const lang = extMap[ext];
+                const code = entry.getData().toString();
+                // Ignore big files.
+                if (code.length > 10 * 1024 * 1024) continue;
+                const udoc = await user.getByUname(domainId, uname);
+                const uid = udoc ? udoc._id : await user.create(`${uname}@hydro.local`, uname, Math.random().toString());
+                const tsdoc = await contest.getStatus(domainId, tid, uid);
+                if (tsdoc?.attend !== 1) await contest.attend(domainId, tid, uid);
+                const rid = await record.add(domainId, pidMap[pid], uid, lang, code, true, {
+                    type: tdoc.docType as any,
+                    tid,
+                });
+                logger.debug('%s/%s submitted to %s with id %s', uname, arg0, pid, rid.toHexString());
+                await Promise.all([
+                    problem.inc(domainId, pidMap[pid], 'nSubmit', 1),
+                    domain.incUserInDomain(domainId, uid, 'nSubmit'),
+                    contest.updateStatus(domainId, tdoc.docId, uid, rid, pidMap[pid]),
+                ]);
             }
-            if (extra || !pidMap[pid] || !extMap[ext]) continue;
-            const lang = extMap[ext];
-            const code = entry.getData().toString();
-            // Ignore big files.
-            if (code.length > 10 * 1024 * 1024) continue;
-            let uid;
-            const udoc = await user.getByUname('system', uname);
-            if (!udoc) uid = await user.create(`${uname}@hydro.local`, uname, Math.random().toString());
-            else uid = udoc._id;
-            const tsdoc = await contest.getStatus(domainId, tid, uid);
-            if (tsdoc?.attend !== 1) await contest.attend(domainId, tid, uid);
-            const rid = await record.add(domainId, pidMap[pid], uid, lang, code, true, {
-                type: tdoc.docType as any,
-                tid,
-            });
-            await Promise.all([
-                problem.inc(domainId, pidMap[pid], 'nSubmit', 1),
-                domain.incUserInDomain(domainId, uid, 'nSubmit'),
-                contest.updateStatus(domainId, tdoc.docId, uid, rid, pidMap[pid]),
-            ]);
-        }
-        this.response.redirect = this.url('record_main');
+        })().catch(logger.error);
+        this.response.redirect = this.url('record_main', { tid });
     }
 }
 
