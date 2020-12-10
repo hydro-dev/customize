@@ -2,6 +2,7 @@
 import { ObjectID } from 'mongodb';
 import AdmZip from 'adm-zip';
 import { filter } from 'lodash';
+import { safeLoad } from 'js-yaml';
 import { streamToBuffer } from 'hydrooj/dist/utils';
 import { Logger } from 'hydrooj/dist/logger';
 import { PRIV } from 'hydrooj/dist/model/builtin';
@@ -29,13 +30,19 @@ class ContestSubmitManyHandler extends Handler {
     async get(domainId: string, tid: ObjectID, ufid: ObjectID) {
         const tdoc = await contest.get(domainId, tid);
         if (!tdoc) throw new ContestNotFoundError(domainId, tid);
-        const pidMap = {};
+        let pidMap = {};
+        let config = {};
+        try {
+            config = safeLoad(tdoc.content);
+        } catch { /* ignore */ }
+        if (typeof config !== 'object') config = {};
         for (const pid of tdoc.pids) {
             const pdoc = await problem.get(domainId, pid);
             pidMap[pdoc.pid] = pdoc.docId;
             pidMap[pdoc.title] = pdoc.docId;
             pidMap[pdoc.docId] = pdoc.docId;
         }
+        pidMap = { ...pidMap, ...config };
         const zip = new AdmZip(await streamToBuffer(await file.get(ufid)));
         const files = filter(zip.getEntries(), (entry) => !entry.isDirectory);
         logger.info('Total %d', files.length);
@@ -44,7 +51,7 @@ class ContestSubmitManyHandler extends Handler {
                 const entry = files[i];
                 if (!(+i % 100)) logger.info('Current %d, Total %d', i, files.length);
                 const [uname, arg0, arg1] = entry.entryName.split('/');
-                const [pid, ext, extra] = arg1 ? [arg1.split('.')[1], arg0] : arg0.split('.');
+                const [pid, ext, extra] = arg1 ? [arg0, arg1.split('.')[1]] : arg0.split('.');
                 if (extra || !pidMap[pid] || !extMap[ext]) continue;
                 const lang = extMap[ext];
                 const code = entry.getData().toString();
