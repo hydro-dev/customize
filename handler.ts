@@ -2,20 +2,18 @@
 import { ObjectID } from 'mongodb';
 import AdmZip from 'adm-zip';
 import { filter } from 'lodash';
-import { safeLoad } from 'js-yaml';
-import { streamToBuffer } from 'hydrooj/dist/utils';
+import { load } from 'js-yaml';
 import { Logger } from 'hydrooj/dist/logger';
 import { PRIV } from 'hydrooj/dist/model/builtin';
-import * as user from 'hydrooj/dist/model/user';
-import * as record from 'hydrooj/dist/model/record';
-import * as file from 'hydrooj/dist/model/file';
+import user from 'hydrooj/dist/model/user';
+import record from 'hydrooj/dist/model/record';
 import * as contest from 'hydrooj/dist/model/contest';
-import * as domain from 'hydrooj/dist/model/domain';
+import domain from 'hydrooj/dist/model/domain';
 import * as problem from 'hydrooj/dist/model/problem';
 import {
     Types, param, Handler, Route,
 } from 'hydrooj/dist/service/server';
-import { ContestNotFoundError } from 'hydrooj/dist/error';
+import { ContestNotFoundError, ValidationError } from 'hydrooj/dist/error';
 
 const extMap = {
     cpp: 'cc',
@@ -27,13 +25,14 @@ const logger = new Logger('contest-submit');
 class ContestSubmitManyHandler extends Handler {
     @param('tid', Types.ObjectID)
     @param('ufid', Types.ObjectID)
-    async get(domainId: string, tid: ObjectID, ufid: ObjectID) {
+    async get(domainId: string, tid: ObjectID) {
+        if (!this.request.files.file) throw new ValidationError('file');
         const tdoc = await contest.get(domainId, tid);
         if (!tdoc) throw new ContestNotFoundError(domainId, tid);
         let pidMap = {};
         let config = {};
         try {
-            config = safeLoad(tdoc.content);
+            config = load(tdoc.content);
         } catch { /* ignore */ }
         if (typeof config !== 'object') config = {};
         for (const pid of tdoc.pids) {
@@ -43,7 +42,7 @@ class ContestSubmitManyHandler extends Handler {
             pidMap[pdoc.docId] = pdoc.docId;
         }
         pidMap = { ...pidMap, ...config };
-        const zip = new AdmZip(await streamToBuffer(await file.get(ufid)));
+        const zip = new AdmZip(this.request.files.file);
         const files = filter(zip.getEntries(), (entry) => !entry.isDirectory);
         logger.info('Total %d', files.length);
         (async () => {

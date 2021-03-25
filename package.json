@@ -1,14 +1,14 @@
 {
     "name": "@hydrooj/customize",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "customize",
     "main": "package.json",
     "repository": "https://github.com/hydro-dev/customize.git",
     "author": "undefined",
     "license": "AGPL-3.0-only",
     "dependencies": {
-        "adm-zip": "^0.4.16",
+        "adm-zip": "^0.5.4",
         "hydrooj": "^2.13.10",
-        "mongodb": "^3.6.3"
+        "mongodb": "^3.6.5"
     }
 }
