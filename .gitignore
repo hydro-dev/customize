@@ -4,4 +4,5 @@ node_modules
 *.js
 *.d.ts
 *.js.map
+!*.page.js
 dist/

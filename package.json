@@ -1,5 +1,5 @@
 {
-    "name": "@hydrooj/customize",
+    "name": "@hydrooj/customize-2",
     "version": "1.0.0",
     "description": "customize",
     "main": "package.json",
@@ -7,7 +7,6 @@
     "author": "undefined",
     "license": "AGPL-3.0-only",
     "dependencies": {
-        "hydrooj": "^2.13.10",
-        "moment": "^2.28.0"
+        "hydrooj": "^2.13.10"
     }
 }
