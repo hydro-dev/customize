@@ -51,11 +51,13 @@ export async function accept(domainId: string, uid: number, pid: number) {
 
 bus.on('record/judge', async (rdoc, updated) => {
     if (rdoc.status === STATUS.STATUS_ACCEPTED && updated) {
-        await domain.incUserInDomain(rdoc.domainId, rdoc.uid, 'coin', 2);
+        const dudoc = await domain.getDomainUser(rdoc.domainId, { _id: rdoc.uid, priv: 1 });
+        const coin = dudoc.coin ?? 20 + 2;
+        await domain.setUserInDomain(rdoc.domainId, rdoc.uid, { coin });
         await (global.Hydro.handler.judge as any).next({
             domainId: rdoc.domainId,
             rid: rdoc._id,
-            message: '恭喜您首次通过本题，获得 2 图灵币。',
+            message: `恭喜您首次通过本题，获得 2 图灵币，当前共有 ${coin} 个。`,
         });
     }
 });
