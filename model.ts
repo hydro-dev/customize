@@ -29,6 +29,7 @@ bus.on('app/started', () => coll.createIndex({ domainId: 1, uid: 1 }, { unique: 
 
 export async function buy(domainId: string, uid: number, pid: number) {
     const udoc = await user.getById(domainId, uid);
+    udoc.coin = udoc.coin ?? 20;
     if (udoc.coin >= 4) {
         return await Promise.all([
             coll.insertOne({ domainId, uid, pid }),

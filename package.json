@@ -5,8 +5,5 @@
     "main": "package.json",
     "repository": "https://github.com/hydro-dev/customize.git",
     "author": "undefined",
-    "license": "AGPL-3.0-only",
-    "dependencies": {
-        "hydrooj": "^2.13.10"
-    }
+    "license": "AGPL-3.0-only"
 }
