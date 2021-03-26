@@ -3,7 +3,7 @@ const NamedPage = window.Hydro.NamedPage;
 const { ConfirmDialog, Notification } = window.Hydro.components;
 const { request, tpl, delay, i18n } = window.Hydro.utils;
 
-const page = new NamedPage('problem-solution', () => {
+const page = new NamedPage('problem_solution', () => {
     async function buy() {
         const action = await new ConfirmDialog({
             $body: tpl`
