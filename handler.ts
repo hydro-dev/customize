@@ -15,6 +15,10 @@ declare module 'hydrooj/dist/handler/problem' {
 
 ProblemSolutionHandler.prototype.postBuy = postBuy;
 
+bus.on('handler/init', async (thisArg) => {
+    thisArg.UiContext.searchUrl = thisArg.url.call(thisArg, 'problem_main');
+});
+
 bus.on('handler/solution/get', async (thisArg) => {
     if (!await bought(thisArg.domainId, thisArg.user._id, thisArg.pdoc.docId)) {
         thisArg.response.body.psdocs.length = 0;
