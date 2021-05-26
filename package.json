@@ -6,5 +6,5 @@
     "repository": "https://github.com/hydro-dev/customize.git",
     "author": "undefined",
     "license": "SEE LICENSE IN LICENSE",
-    "dependencies": {}
+    "preferUnplugged": true
 }
